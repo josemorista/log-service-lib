@@ -13,6 +13,7 @@ export class LogMessage {
   attributes?: Record<string, unknown>;
   traceId?: string;
   spanId?: string;
+  duration?: number;
 
   constructor(options: LogMessageInput) {
     this.timestamp = Date.now();
@@ -23,5 +24,6 @@ export class LogMessage {
     this.attributes = options.attributes;
     this.traceId = options.traceId;
     this.spanId = options.spanId;
+    this.duration = options.duration;
   }
 }

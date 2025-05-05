@@ -9,13 +9,13 @@ export interface PinoOptions {
 }
 
 export class PinoLogger extends Logger {
-  private readonly logger: PinoInstance;
-  private options?: PinoOptions;
+  private logger: PinoInstance;
 
-  constructor(level: LogLevel, options?: PinoOptions) {
+  constructor(
+    level: LogLevel,
+    private options?: PinoOptions
+  ) {
     super(level);
-    this.options = options;
-    console.log(options);
     this.logger = pino(
       {
         ...(options?.config ?? {}),
@@ -36,7 +36,7 @@ export class PinoLogger extends Logger {
     this.logger[level](rest);
   }
 
-  protected _getChild(): Logger {
+  getChild() {
     return new PinoLogger(this.level, this.options);
   }
 }

@@ -21,7 +21,6 @@ const expectedBaseInfoMessage = {
   severityNumber: LogLevelSeverity['info'],
   body: dummyMessage.body,
   attributes: dummyMessage.attributes,
-  spanId: '#',
 };
 
 describe('PinoLogger', () => {
@@ -64,13 +63,13 @@ describe('PinoLogger', () => {
           severityNumber: LogLevelSeverity[logLevel],
           body: dummyMessage.body,
           attributes: dummyMessage.attributes,
-          spanId: '#',
         });
       });
 
       if (disallowed.length) {
         it.each(disallowed)(`should not log message with %s level when configured as ${level}`, (logLevel) => {
           sut[logLevel](dummyMessage);
+          expect.any(Number);
           expect(logs[0]).toBeUndefined();
         });
       }
@@ -104,28 +103,32 @@ describe('PinoLogger', () => {
 
   describe('getSpan', () => {
     const sut = makeSut('trace', fakeDestination);
+
     it('Should return span with correct name', () => {
       let span = sut.getSpan('ToysVacationService');
-      expect(span.getSpanId()).toBe('#:ToysVacationService');
+      expect(span.getSpanId()).toBe('ToysVacationService');
       span = span.getSpan('PoolService');
-      expect(span.getSpanId()).toBe('#:ToysVacationService:PoolService');
+      expect(span.getSpanId()).toBe('ToysVacationService:PoolService');
     });
 
-    it('Should log messages with correct span', () => {
+    it('Should log messages with correct spanId and duration', () => {
       const spanId = 'ToysVacationService';
-      let span = sut.getSpan(spanId);
+      const span = sut.getSpan(spanId);
       span.info(dummyMessage);
-      expect(JSON.parse(logs[0])).toMatchObject({ ...expectedBaseInfoMessage, spanId: `#:${spanId}` });
+
+      expect(JSON.parse(logs[0])).toMatchObject({ ...expectedBaseInfoMessage, spanId, duration: expect.any(Number) });
     });
 
     it('Should persist traceId within spans', () => {
       sut.setTraceId();
       const spanId = 'ToysVacationService';
-      let span = sut.getSpan(spanId);
+      const span = sut.getSpan(spanId);
       span.info(dummyMessage);
+
       expect(JSON.parse(logs[0])).toMatchObject({
         ...expectedBaseInfoMessage,
-        spanId: `#:${spanId}`,
+        spanId,
+        duration: expect.any(Number),
         traceId: sut.getTraceId(),
       });
     });

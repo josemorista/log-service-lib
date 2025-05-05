@@ -1,20 +1,23 @@
 import { AsyncId } from './AsyncId';
 import { LogLevel } from '../enums/LogLevel';
 import { LogMessage, LogMessageInput } from './LogMessage';
+import { Stopwatch } from './Stopwatch';
 
-type MessageInput = Omit<LogMessageInput, 'traceId' | 'spanId' | 'level'>;
+type MessageInput = Omit<LogMessageInput, 'level' | 'traceId' | 'spanId' | 'duration'>;
 
 export abstract class Logger {
   private traceId?: AsyncId;
-  private spanId?: AsyncId;
   public level: LogLevel;
 
-  protected abstract _log(level: LogLevel, message: LogMessage): void;
-  protected abstract _getChild(): Logger;
+  private spanId?: string;
+  private spanSpw?: Stopwatch;
 
   constructor(level: LogLevel) {
     this.level = level;
   }
+
+  protected abstract _log(level: LogLevel, message: LogMessage): void;
+  abstract getChild(): Logger;
 
   private log(level: LogLevel, message: MessageInput) {
     this._log(
@@ -23,7 +26,8 @@ export abstract class Logger {
         ...message,
         level,
         traceId: this.getTraceId(),
-        spanId: this.getSpanId(),
+        spanId: this.spanId,
+        duration: this.spanSpw?.getTime(),
       })
     );
   }
@@ -36,19 +40,8 @@ export abstract class Logger {
     return this.traceId?.value;
   }
 
-  getSpanId(): string {
-    return this.spanId?.value || '#';
-  }
-
-  getSpan(name: string) {
-    const span = this._getChild();
-    span.traceId = this.traceId;
-    span.spanId = new AsyncId(`${this.getSpanId()}:${name}`);
-    return span;
-  }
-
   trace(message: MessageInput) {
-    this.log('trace', { ...message });
+    this.log('trace', message);
   }
 
   debug(message: MessageInput) {
@@ -69,5 +62,17 @@ export abstract class Logger {
 
   fatal(message: MessageInput) {
     this.log('fatal', message);
+  }
+
+  getSpan(name: string) {
+    const span = this.getChild();
+    if (this.getTraceId()) span.setTraceId(this.getTraceId());
+    span.spanId = this.spanId ? `${this.spanId}:${name}` : name;
+    span.spanSpw = new Stopwatch();
+    return span;
+  }
+
+  getSpanId() {
+    return this.spanId;
   }
 }
