@@ -27,7 +27,7 @@ jobs:
         run: npm version ${{ inputs.bump_type }}
       - name: Push changes to GitHub
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_AUTH_TOKEN }}
         run: |
           git push
           git push --tags
