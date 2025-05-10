@@ -23,6 +23,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 22
+      - name: Set Git config
+        run: |
+          git config user.name jm-bot
+          git config user.email josemorista@id.uff.br
       - name: Bump version
         run: npm version ${{ inputs.bump_type }}
       - name: Push changes to GitHub
