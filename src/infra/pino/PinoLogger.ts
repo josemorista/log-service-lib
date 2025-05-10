@@ -6,30 +6,29 @@ import { LogLevel } from '../../enums/LogLevel';
 export interface PinoOptions {
   config?: Omit<LoggerOptions, 'level' | 'timestamp' | 'base' | 'formatters'>;
   destination?: DestinationStream;
+  _child?: boolean;
 }
 
 export class PinoLogger extends Logger {
-  private logger: PinoInstance;
+  private logger!: PinoInstance;
 
-  constructor(
-    level: LogLevel,
-    private options?: PinoOptions
-  ) {
+  constructor(level: LogLevel, options?: PinoOptions) {
     super(level);
-    this.logger = pino(
-      {
-        ...(options?.config ?? {}),
-        level,
-        base: undefined,
-        timestamp: false,
-        formatters: {
-          level(label) {
-            return { severityText: label.toUpperCase() };
+    if (!options?._child)
+      this.logger = pino(
+        {
+          ...(options?.config ?? {}),
+          level,
+          base: undefined,
+          timestamp: false,
+          formatters: {
+            level(label) {
+              return { severityText: label.toUpperCase() };
+            },
           },
         },
-      },
-      options?.destination ?? process.stdout
-    );
+        options?.destination ?? process.stdout
+      );
   }
 
   protected _log(level: LogLevel, { severityText: _, ...rest }: LogMessage): void {
@@ -37,6 +36,8 @@ export class PinoLogger extends Logger {
   }
 
   getChild() {
-    return new PinoLogger(this.level, this.options);
+    const span = new PinoLogger(this.level, { _child: true });
+    span.logger = this.logger;
+    return span;
   }
 }
