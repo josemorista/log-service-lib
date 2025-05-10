@@ -1,4 +1,4 @@
-# Log Service Library
+# Log Service Library OTEL
 
 This library provides a logging service with various log levels and features, built on top of the Pino logging library. It allows you to log messages with structured data, manage trace IDs, and create spans for better observability.
 
